@@ -1,10 +1,13 @@
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'token_secret'
+    SECRET_KEY = os.getenv('SECRET_KEY', 'your_secret_key')
+    
+    # MYSQL
+    DB_HOST = 'localhost'
+    DB_USER = 'root'
+    DB_PASSWORD = ''
+    DB_NAME = 'pynotes'
 
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'mysql+pymysql://root:@localhost:3306/flask_db'
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
