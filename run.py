@@ -1,5 +1,5 @@
 import pymysql
-from app import create_app  # ✅ Correct : Importer l'application ici
+from app import create_app 
 from flask_migrate import upgrade
 from config import Config
 
