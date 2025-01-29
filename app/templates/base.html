@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}PyNotes{% endblock %}</title>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('main.index') }}">Accueil</a>
+        <a href="{{ url_for('auth.login') }}">Connexion</a>
+    </nav>
+    <hr>
+    {% block content %}{% endblock %}
+</body>
+</html>

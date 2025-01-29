@@ -1,23 +1,44 @@
-from app import db
-from flask_login import UserMixin
-from sqlalchemy import Enum
 from datetime import datetime
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from app import db  # ✅ Importé après l'initialisation de db
+
+
+def create_admin():
+    if not User.query.filter_by(username="admin").first():
+        admin = User(
+            username="admin",
+            email="admin@example.com",
+            password=generate_password_hash("admin", method='pbkdf2:sha256'),
+            role="admin"
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("[INFO] Compte administrateur créé avec succès !")
+    else:
+        print("[INFO] Compte administrateur déjà existant.")
+
+
+
 
 class User(db.Model, UserMixin):
-    __tablename__ = 'users'
+    __tablename__ = 'users'  # Assurez-vous que le nom de la table est bien 'users'
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
-    role = db.Column(Enum('student', 'teacher', 'admin', name='user_roles'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    password = db.Column(db.String(256), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="student")
 
-    student = db.relationship('Student', back_populates='user', uselist=False)
-    teacher = db.relationship('Teacher', back_populates='user', uselist=False)
+    # Relations avec Student et Teacher
+    student = db.relationship('Student', back_populates='user', uselist=False)  # Un seul Student par User
+    teacher = db.relationship('Teacher', back_populates='user', uselist=False)  # Un seul Teacher par User
 
-    def __repr__(self):
-        return f"<User {self.username} - {self.role}>"
+    def set_password(self, password):
+        self.password = generate_password_hash(password, method='pbkdf2:sha256')
+
+    def check_password(self, password):
+        return check_password_hash(self.password, password)
 
 
 class Student(db.Model):

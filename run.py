@@ -1,13 +1,11 @@
 import pymysql
-from app import create_app, db
+from app import create_app  # ✅ Correct : Importer l'application ici
 from flask_migrate import upgrade
-from flask import Flask
 from config import Config
 
 app = create_app()
 
 db_name = Config.DB_NAME
-
 
 print(f"[INFO] Vérification de l'existence de la base de données '{db_name}'...")
 
