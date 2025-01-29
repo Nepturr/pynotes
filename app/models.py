@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import db  # ✅ Importé après l'initialisation de db
+from app import db 
 
 
 def create_admin():
@@ -22,7 +22,7 @@ def create_admin():
 
 
 class User(db.Model, UserMixin):
-    __tablename__ = 'users'  # Assurez-vous que le nom de la table est bien 'users'
+    __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(100), unique=True, nullable=False)
@@ -30,9 +30,8 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="student")
 
-    # Relations avec Student et Teacher
-    student = db.relationship('Student', back_populates='user', uselist=False)  # Un seul Student par User
-    teacher = db.relationship('Teacher', back_populates='user', uselist=False)  # Un seul Teacher par User
+    student = db.relationship('Student', back_populates='user', uselist=False)
+    teacher = db.relationship('Teacher', back_populates='user', uselist=False)
 
     def set_password(self, password):
         self.password = generate_password_hash(password, method='pbkdf2:sha256')
@@ -128,3 +127,6 @@ class Timetable(db.Model):
 
     def __repr__(self):
         return f"<Timetable {self.class_ref.name if self.class_ref else 'N/A'} - {self.day} - {self.subject.name}>"
+
+
+create_admin()

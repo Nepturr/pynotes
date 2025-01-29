@@ -21,9 +21,8 @@ def create_app(config_class=Config):
 
    
     with app.app_context():
-        from app import models  #Importation des tables (models)
+        from app import models
         print("[INFO] Vérification et application des migrations...")
-        models.create_admin()
 
     from app.routes.auth import auth_bp
     from app.routes.admin import admin_bp 
