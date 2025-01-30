@@ -3,8 +3,6 @@ from app import create_app
 from flask_migrate import upgrade
 from config import Config
 
-app = create_app()
-
 db_name = Config.DB_NAME
 
 print(f"[INFO] Vérification de l'existence de la base de données '{db_name}'...")
@@ -31,6 +29,10 @@ try:
 except Exception as e:
     print(f"[ERREUR] Impossible de vérifier/créer la base de données : {e}")
 
+
+app = create_app()
+
+
 with app.app_context():
     import os
     if not os.path.exists("migrations"):  
@@ -41,6 +43,8 @@ with app.app_context():
     
     print("[INFO] Application des migrations...")
     upgrade()
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

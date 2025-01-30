@@ -5,18 +5,20 @@ from app import db
 
 
 def create_admin():
-    if not User.query.filter_by(username="admin").first():
-        admin = User(
-            username="admin",
-            email="admin@example.com",
-            password=generate_password_hash("admin", method='pbkdf2:sha256'),
-            role="admin"
-        )
-        db.session.add(admin)
-        db.session.commit()
-        print("[INFO] Compte administrateur créé avec succès !")
-    else:
-        print("[INFO] Compte administrateur déjà existant.")
+
+    with db.session.begin(): 
+        if not User.query.filter_by(username="admin").first():
+            admin = User(
+                username="admin",
+                email="admin@example.com",
+                password=generate_password_hash("admin", method='pbkdf2:sha256'),
+                role="admin"
+            )
+            db.session.add(admin)
+            print("[INFO] Compte administrateur créé avec succès !")
+        else:
+            print("[INFO] Compte administrateur déjà existant.")
+
 
 
 
@@ -38,6 +40,8 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
+    
+    
 
 
 class Student(db.Model):
@@ -129,4 +133,3 @@ class Timetable(db.Model):
         return f"<Timetable {self.class_ref.name if self.class_ref else 'N/A'} - {self.day} - {self.subject.name}>"
 
 
-create_admin()
