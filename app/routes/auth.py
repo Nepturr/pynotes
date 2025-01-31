@@ -39,5 +39,5 @@ def register():
             db.session.add(user)
             db.session.commit()
             flash("Compte créé avec succès. Vous pouvez vous connecter.", "success")
-            return redirect(url_for("auth.login"))  # ✅ Vérifier que c'est bien 'auth.login'
+            return redirect(url_for("auth.login"))
     return render_template("register.html", form=form)

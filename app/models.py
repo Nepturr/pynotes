@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app import db 
 
 
+
 def create_admin():
 
     with db.session.begin(): 
@@ -18,8 +19,6 @@ def create_admin():
             print("[INFO] Compte administrateur créé avec succès !")
         else:
             print("[INFO] Compte administrateur déjà existant.")
-
-
 
 
 
@@ -40,6 +39,9 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
+
+    def __repr__(self):
+        return f"<User {self.username} - Role {self.role}>"
     
     
 
