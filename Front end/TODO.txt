@@ -1,4 +1,4 @@
 mettre l'image du prof bien : PATH
 arriver a faire fonctionner jinja 
 mettre bien le css : PATH 
-
+relier bdd, .py...
