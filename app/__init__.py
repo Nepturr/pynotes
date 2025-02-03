@@ -6,9 +6,11 @@ from config import Config
 from werkzeug.security import generate_password_hash
 
 
+
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -16,6 +18,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+
     
 
     login_manager.login_view = "auth.login"
@@ -33,9 +36,13 @@ def create_app(config_class=Config):
     from app.routes.auth import auth_bp
     from app.routes.admin import admin_bp 
     from app.routes.main import main_bp 
+    from app.routes.student import student_bp  
+    from app.routes.teacher import teacher_bp  
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(student_bp)
+    app.register_blueprint(teacher_bp)
     app.register_blueprint(main_bp)
 
     @login_manager.user_loader

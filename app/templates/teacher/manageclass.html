@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% include "nav.html" %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-9 col-lg-10 px-4">
+            <h2 class="mt-4">Gestion des classes</h2>
+
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addClassModal">
+                <i class="fas fa-plus"></i> Ajouter une classe
+            </button>
+
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom de la classe</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_ in classes %}
+                        <tr>
+                            <td>{{ class_.id }}</td>
+                            <td>{{ class_.name }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" data-id="{{ class_.id }}" onclick="deleteClass(event)">Supprimer</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal pour ajouter une classe -->
+<div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addClassModalLabel">Créer une nouvelle classe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="classForm" method="POST">
+                    {{ form.hidden_tag() }} <!-- CSRF token -->
+                    <div class="mb-3">
+                        <label for="className" class="form-label">Nom de la classe</label>
+                        <input type="text" class="form-control" id="className" name="name" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">Créer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AJAX -->
+<script>
+document.getElementById("classForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+    let className = document.getElementById("className").value;
+    let csrfToken = document.querySelector('input[name="csrf_token"]').value;  // Récup du token CSRV
+
+    fetch("{{ url_for('teacher.add_class') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify({ name: className })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let table = document.querySelector("tbody");
+            let newRow = table.insertRow();
+            newRow.innerHTML = `<td>${data.id}</td><td>${data.name}</td><td><button class="btn btn-danger btn-sm" data-id="${data.id}" onclick="deleteClass(event)">Supprimer</button></td>`;
+            
+            document.getElementById("addClassModal").querySelector(".btn-close").click();
+        } else {
+            alert("Erreur: " + JSON.stringify(data.errors));
+        }
+    })
+    .catch(error => console.error("Erreur:", error));
+});
+
+</script>
+
+{% endblock %}

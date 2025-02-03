@@ -9,11 +9,18 @@ auth_bp = Blueprint("auth", __name__)
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+        user = User.query.filter_by(email=form.email.data).first()
         if user and user.check_password(form.password.data):
             login_user(user)
             flash("Connexion réussie.", "success")
-            return redirect(url_for("admin.dashboard")) if user.role == "admin" else redirect(url_for("main.index"))
+            if user.role == "admin":
+                return redirect(url_for("admin.dashboard"))
+            elif user.role == "student":
+                return redirect(url_for("student.dashboard"))
+            elif user.role == "teacher":
+                return redirect(url_for("teacher.dashboard"))
+            else: 
+                return redirect(url_for("main.index"))
         flash("Identifiants incorrects.", "danger")
     return render_template("login.html", form=form)
 
@@ -25,6 +32,7 @@ def logout():
     logout_user()
     flash("Déconnexion réussie.", "info")
     return redirect(url_for("auth.login"))
+
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])

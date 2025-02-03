@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% include "nav.html" %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Notes -->
+        <main class="col-md-7 col-lg-9 px-md-9">
+            <h2 class="mt-4">Mes Notes</h2>
+            <div class="container mt-4">
+                <div class="card shadow-lg">
+                    <div class="card-body">
+                        <table class="table table-hover text-center">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Matière</th>
+                                    <th>Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade in grades %}
+                                    <tr>
+                                        <td>{{ grade.subject.name }}</td>
+                                        <td>
+                                            <span class="badge {% if grade.grade >= 15 %}bg-success{% elif grade.grade >= 10 %}bg-warning{% else %}bg-danger{% endif %}">
+                                                {{ grade.grade }} / 20
+                                            </span>
+                                            
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="2">Aucune note disponible</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

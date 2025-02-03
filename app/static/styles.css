@@ -1,0 +1,122 @@
+
+body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to right, #66cdaa, #2e8b57); 
+    height: 100vh;
+    margin: 0;
+    overflow-x: hidden; /* Empêche le défilement horizontal */
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background: rgba(0, 100, 0, 0.9); /* Vert foncé avec opacité */
+    color: rgb(12, 12, 12);
+    padding: 20px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+}
+
+.sidebar h4 {
+    text-align: center;
+    font-weight: bold;
+}
+
+.nav-link {
+    color: rgb(14, 14, 14);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background 0.3s ease-in-out;
+}
+
+.nav-link i {
+    margin-right: 10px;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.2); /* Effet au survol */
+}
+
+/* Contenu principal */
+main {
+    margin-left: 270px;
+    padding: 30px;
+}
+
+/* navbar */
+.bg-light {
+    background-color: #e6f4ea !important; 
+    border-radius: 5px;
+    padding: 15px;
+}
+
+/* Tableau emploi du temps */
+.table {
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    width: 100%;
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Style des en-têtes */
+thead th {
+    font-weight: bold;
+    text-align: center;
+    padding: 10px;
+    background: #b8e0c2; 
+    color: #333;
+}
+
+td {
+    height: 50px;
+    vertical-align: middle;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.event {
+    background-color: #66cdaa; /* Vert turquoise */
+    color: rgb(0, 0, 0);
+    border-radius: 5px;
+    padding: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.btn-primary {
+    background-color: #267748;
+    border-color: #173f28;
+}
+
+.btn-primary:hover {
+    background-color: #173f28;
+    border-color: #173f28;
+}
+
+.btn-primary:focus, .btn-primary:active, .show > .btn-primary.dropdown-toggle {
+    background-color: #006400 !important;
+    border-color: #006400 !important;
+    box-shadow: none !important;
+}
+
+.dropdown-item:focus {
+    background-color: #006400 !important;
+}
+
+.cate { 
+    border-bottom-right-radius: 0;
+    border-bottom-left-radius: 0;
+    }
+
+.notes {
+    border-top-right-radius: 0;
+    border-top-left-radius: 0;
+}

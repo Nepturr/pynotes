@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% include "nav.html" %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+
+        <main class="col-md-7 col-lg-9 px-md-9">
+            <h2 class="mt-4">Mon planning</h2>
+            <div class="d-flex justify-content-center align-items-center bg-light p-3 rounded shadow-sm">
+                <strong>27 janv. – 1 févr. 2025</strong>
+            </div>
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered text-center">
+                    <thead>
+                        <tr class="bg-light">
+                            <th>Heure</th>
+                            <th class="text-primary">lun. 27/01</th>
+                            <th class="text-primary">mar. 28/01</th>
+                            <th class="text-primary">mer. 29/01</th>
+                            <th class="text-primary">jeu. 30/01</th>
+                            <th class="text-primary">ven. 31/01</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>08 h</td><td colspan="6"></td></tr>
+                        <tr><td>09 h</td><td colspan="6"></td></tr>
+                        <tr><td>10 h</td><td colspan="6"></td></tr>
+                        <tr><td>11 h</td><td colspan="4"></td><td class="event">11:00 - 13:00 <br>Approfondissement au Web Sécurisé<br><strong>M.Martin</strong><br>Salle Norbert</td></tr>
+                        <tr><td>12 h</td><td colspan="6"></td></tr>
+                        <tr><td>13 h</td><td colspan="6"></td></tr>
+                        <tr><td>14 h</td>
+                            <td class="event">14:00 - 18:00 <br>Développement Web Sécurisé<br><strong>M.Plichon</strong><br>Salle Norbert</td>
+                            <td class="event">14:00 - 18:00 <br>Développement Web Sécurisé<br><strong>M.Plichon</strong><br>Salle Norbert</td>
+                            <td class="event">14:00 - 18:00 <br>Développement Web Sécurisé<br><strong>M.Plichon</strong><br>Salle Norbert</td>
+                            <td class="event">14:00 - 15:30 <br>Espagnol<br><strong>M.Hernandez</strong><br>Turing</td>
+                            <td colspan="2"></td>
+                        </tr>
+                        <tr><td>15 h</td><td colspan="6"></td></tr>
+                        <tr><td>16 h</td><td colspan="4"></td></tr>
+                        <tr><td>17 h</td><td colspan="6"></td></tr>
+                        <tr><td>18 h</td><td colspan="6"></td></tr>
+                        <tr><td>19 h</td><td colspan="6"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
