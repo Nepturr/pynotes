@@ -1,21 +1,153 @@
 {% extends "base.html" %}
+{% include "nav.html" %}
+
 {% block content %}
-<h2>Panel Administrateur</h2>
-<a href="{{ url_for('admin.add_user') }}">Créer un utilisateur</a>
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Nom d'utilisateur</th>
-        <th>Email</th>
-        <th>Rôle</th>
-    </tr>
-    {% for user in users %}
-    <tr>
-        <td>{{ user.id }}</td>
-        <td>{{ user.username }}</td>
-        <td>{{ user.email }}</td>
-        <td>{{ user.role }}</td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-9 col-lg-10 px-4">
+            <h2 class="mt-4">Gestion des utilisateurs</h2>
+
+            <!-- Bouton pour ouvrir le modal -->
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                <i class="fas fa-plus"></i> Ajouter un utilisateur
+            </button>
+
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Rôle</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr id="user-{{ user.id }}">
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.first_name }}</td>
+                            <td>{{ user.last_name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.role }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteUser(event, {{ user.id }})">Supprimer</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal pour ajouter un utilisateur -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addUserModalLabel">Créer un nouvel utilisateur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm" method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label for="firstName" class="form-label">Prénom</label>
+                        {{ form.first_name(class="form-control", id="firstName") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="lastName" class="form-label">Nom</label>
+                        {{ form.last_name(class="form-control", id="lastName") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        {{ form.email(class="form-control", id="email") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Mot de passe</label>
+                        {{ form.password(class="form-control", id="password") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Rôle</label>
+                        {{ form.role(class="form-control", id="role") }}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">Créer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("userForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+    
+    let firstName = document.getElementById("firstName").value;
+    let lastName = document.getElementById("lastName").value;
+    let email = document.getElementById("email").value;
+    let password = document.getElementById("password").value;
+    let role = document.getElementById("role").value;
+    let csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    fetch("{{ url_for('admin.add_user') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, email: email, password: password, role: role })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let table = document.querySelector("tbody");
+            let newRow = table.insertRow();
+            newRow.innerHTML = `<td>${data.id}</td><td>${data.first_name}</td><td>${data.last_name}</td><td>${data.email}</td><td>${data.role}</td><td><button class="btn btn-danger btn-sm" onclick="deleteUser(event, ${data.id})">Supprimer</button></td>`;
+            $('#addUserModal').modal('hide');
+            alert("Utilisateur ajouté avec succès !");
+        } else {
+            alert(data.error || "Une erreur est survenue.");
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        alert("Une erreur est survenue.");
+    });
+});
+
+function deleteUser(event, userId) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
+        let csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+        fetch(`/admin/delete_user/${userId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let row = document.getElementById(`user-${userId}`);
+                row.remove();
+               
+                alert("Utilisateur supprimé avec succès !");
+            } else {
+                alert(data.error || "Une erreur est survenue lors de la suppression.");
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert("Une erreur est survenue.");
+        });
+    }
+}
+</script>
+
 {% endblock %}

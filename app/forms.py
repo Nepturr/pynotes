@@ -30,9 +30,25 @@ class RegistrationForm(FlaskForm):
 
 
 
-from flask_wtf import FlaskForm
-
 class ClassForm(FlaskForm):
     name = StringField("Nom de la classe", validators=[DataRequired()])
     submit = SubmitField("Ajouter la classe")
 
+
+class AddClassForm(FlaskForm):
+    name = StringField('Nom de la classe', validators=[DataRequired()])
+
+
+class AddSubjectForm(FlaskForm):
+    name = StringField('Nom de la matière', validators=[DataRequired(), Length(min=1, max=100)])
+
+
+class AddUserForm(FlaskForm):
+    first_name = StringField('Prénom', validators=[DataRequired(), Length(min=1, max=100)])
+    last_name = StringField('Nom', validators=[DataRequired(), Length(min=1, max=100)])
+    email = StringField('Email', validators=[DataRequired()])
+    password = PasswordField('Mot de passe', validators=[DataRequired(), Length(min=6)])
+    role = SelectField('Rôle', choices=[('admin', 'Administrateur'), ('teacher', 'Enseignant'), ('student', 'Étudiant')], validators=[DataRequired()])
+
+    def __init__(self, *args, **kwargs):
+        super(AddUserForm, self).__init__(*args, **kwargs)

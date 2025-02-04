@@ -3,6 +3,7 @@ from app import create_app
 from flask_migrate import upgrade
 from config import Config
 
+
 db_name = Config.DB_NAME
 
 print(f"[INFO] Vérification de l'existence de la base de données '{db_name}'...")

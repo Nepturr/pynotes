@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% include "nav.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-9 col-lg-10 px-4">
+            <h2 class="mt-4">Gestion des classes</h2>
+
+            <!-- Bouton pour ouvrir le modal -->
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addClassModal">
+                <i class="fas fa-plus"></i> Ajouter une classe
+            </button>
+
+            <!-- Tableau des classes -->
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom de la classe</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for class_ in classes %}
+                        <tr>
+                            <td>{{ class_.id }}</td>
+                            <td>{{ class_.name }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" data-id="{{ class_.id }}" onclick="deleteClass(event)">Supprimer</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal pour ajouter une classe -->
+<div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addClassModalLabel">Créer une nouvelle classe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Formulaire avec Flask-WTF -->
+                <form id="classForm" method="POST" novalidate>
+                    {{ form.hidden_tag() }}  <!-- Génère le token CSRF -->
+                    <div class="mb-3">
+                        <label for="className" class="form-label">Nom de la classe</label>
+                        {{ form.name(class="form-control", id="className") }} <!-- Utilisation de Flask-WTF -->
+                    </div>
+                    <button type="submit" class="btn btn-success">Créer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript pour gérer l'ajout et la suppression de classe avec AJAX -->
+<script>
+document.getElementById("classForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+    let className = document.getElementById("className").value;
+    let csrfToken = document.querySelector('input[name="csrf_token"]').value;  // Récupération du token CSRF
+
+    // Envoi de la requête AJAX pour ajouter la classe
+    fetch("{{ url_for('admin.add_class') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify({ name: className })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Ajout de la nouvelle ligne dans le tableau
+            let table = document.querySelector("tbody");
+            let newRow = table.insertRow();
+            newRow.innerHTML = `<td>${data.id}</td><td>${data.name}</td><td><button class="btn btn-danger btn-sm" data-id="${data.id}" onclick="deleteClass(event)">Supprimer</button></td>`;
+            
+            // Fermer le modal après ajout
+            document.getElementById("addClassModal").querySelector(".btn-close").click();
+        } else {
+            alert("Erreur: " + JSON.stringify(data.error));
+        }
+    })
+    .catch(error => console.error("Erreur:", error));
+});
+
+// Fonction pour supprimer une classe via AJAX
+function deleteClass(event) {
+    event.preventDefault();
+
+    // Récupérer l'ID de la classe à supprimer
+    let classId = event.target.getAttribute("data-id");
+
+    // Récupérer le token CSRF
+    let csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    // Envoi de la requête AJAX pour supprimer la classe
+    fetch(`/admin/delete_class/${classId}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Si la suppression est réussie, on retire la ligne du tableau
+            event.target.closest("tr").remove();
+        } else {
+            alert("Erreur: " + data.error);
+        }
+    })
+    .catch(error => console.error("Erreur:", error));
+}
+</script>
+
+{% endblock %}

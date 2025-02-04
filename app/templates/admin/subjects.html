@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% include "nav.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-9 col-lg-10 px-4">
+            <h2 class="mt-4">Gestion des matières</h2>
+
+            <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                <i class="fas fa-plus"></i> Ajouter une matière
+            </button>
+
+            <div class="table-responsive mt-3">
+                <table class="table table-bordered">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nom de la matière</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for subject in subjects %}
+                        <tr>
+                            <td>{{ subject.id }}</td>
+                            <td>{{ subject.name }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" data-id="{{ subject.id }}" onclick="deleteSubject(event)">Supprimer</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal pour ajouter une matière -->
+<div class="modal fade" id="addSubjectModal" tabindex="-1" aria-labelledby="addSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSubjectModalLabel">Créer une nouvelle matière</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="subjectForm" method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        <label for="subjectName" class="form-label">Nom de la matière</label>
+                        {{ form.name(class="form-control", id="subjectName") }}
+                    </div>
+                    <button type="submit" class="btn btn-success">Créer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("subjectForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+    let subjectName = document.getElementById("subjectName").value;
+    let csrfToken = document.querySelector('input[name="csrf_token"]').value;  
+
+    fetch("{{ url_for('admin.add_subject') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify({ name: subjectName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let table = document.querySelector("tbody");
+            let newRow = table.insertRow();
+            newRow.innerHTML = `<td>${data.id}</td><td>${data.name}</td><td><button class="btn btn-danger btn-sm" data-id="${data.id}" onclick="deleteSubject(event)">Supprimer</button></td>`;
+            
+            document.getElementById("addSubjectModal").querySelector(".btn-close").click();
+        } else {
+            alert("Erreur: " + JSON.stringify(data.error));
+        }
+    })
+    .catch(error => console.error("Erreur:", error));
+});
+
+function deleteSubject(event) {
+    event.preventDefault();
+
+    let subjectId = event.target.getAttribute("data-id");
+
+    let csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    fetch(`/admin/delete_subject/${subjectId}`, {
+        method: "DELETE",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            event.target.closest("tr").remove();
+        } else {
+            alert("Erreur: " + data.error);
+        }
+    })
+    .catch(error => console.error("Erreur:", error));
+}
+</script>
+
+{% endblock %}
