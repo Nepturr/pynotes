@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import StringField, PasswordField, SubmitField, DecimalField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 from app.models import User, Class, db
 
@@ -52,3 +52,9 @@ class AddUserForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(AddUserForm, self).__init__(*args, **kwargs)
+
+
+class GradeForm(FlaskForm):
+    subject = SelectField("Matière", coerce=int, validators=[DataRequired()])
+    grade = DecimalField("Note", places=2, validators=[DataRequired()])
+    submit = SubmitField("Enregistrer")

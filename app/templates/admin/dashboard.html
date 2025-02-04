@@ -75,7 +75,27 @@
                         <label for="role" class="form-label">Rôle</label>
                         {{ form.role(class="form-control", id="role") }}
                     </div>
-                    
+
+                    <!-- Classe (visible uniquement si le rôle est étudiant) -->
+                    <div class="mb-3" id="classField" style="display: none;">
+                        <label for="class" class="form-label">Classe</label>
+                        <select class="form-control" id="class" name="class">
+                            {% for classe in classes %}
+                                <option value="{{ classe.id }}">{{ classe.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Matière (visible uniquement si le rôle est enseignant) -->
+                    <div class="mb-3" id="subjectField" style="display: none;">
+                        <label for="subject" class="form-label">Matière</label>
+                        <select class="form-control" id="subject" name="subject">
+                            {% for subject in subjects %}
+                                <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <button type="submit" class="btn btn-success">Créer</button>
                 </form>
             </div>
@@ -84,15 +104,40 @@
 </div>
 
 <script>
+document.getElementById("role").addEventListener("change", function() {
+    let role = this.value;
+    
+    // Cache les deux champs par défaut
+    document.getElementById("classField").style.display = "none";
+    document.getElementById("subjectField").style.display = "none";
+    
+    // Affiche le champ approprié en fonction du rôle
+    if (role === "student") {
+        document.getElementById("classField").style.display = "block";
+    } else if (role === "teacher") {
+        document.getElementById("subjectField").style.display = "block";
+    }
+});
+
 document.getElementById("userForm").addEventListener("submit", function(event) {
     event.preventDefault();
-    
+
     let firstName = document.getElementById("firstName").value;
     let lastName = document.getElementById("lastName").value;
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
     let role = document.getElementById("role").value;
+    let classId = document.getElementById("class").value || null;  // Vérifie si une classe est sélectionnée
+    let subjectId = document.getElementById("subject").value || null;
     let csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    let data = { first_name: firstName, last_name: lastName, email: email, password: password, role: role };
+
+    if (role === "student" && classId) {
+        data.class = classId;
+    } else if (role === "teacher" && subjectId) {
+        data.subject = subjectId;
+    }
 
     fetch("{{ url_for('admin.add_user') }}", {
         method: "POST",
@@ -100,7 +145,7 @@ document.getElementById("userForm").addEventListener("submit", function(event) {
             "Content-Type": "application/json",
             "X-CSRFToken": csrfToken
         },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName, email: email, password: password, role: role })
+        body: JSON.stringify(data)
     })
     .then(response => response.json())
     .then(data => {
@@ -120,34 +165,6 @@ document.getElementById("userForm").addEventListener("submit", function(event) {
     });
 });
 
-function deleteUser(event, userId) {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
-        let csrfToken = document.querySelector('input[name="csrf_token"]').value;
-
-        fetch(`/admin/delete_user/${userId}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                let row = document.getElementById(`user-${userId}`);
-                row.remove();
-               
-                alert("Utilisateur supprimé avec succès !");
-            } else {
-                alert(data.error || "Une erreur est survenue lors de la suppression.");
-            }
-        })
-        .catch(error => {
-            console.error(error);
-            alert("Une erreur est survenue.");
-        });
-    }
-}
 </script>
 
 {% endblock %}

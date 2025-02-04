@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% include "nav.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <main class="col-md-9 col-lg-10 px-4">
+            <h2 class="mt-4">Gestion des Notes</h2>
+            
+            <label for="classSelector" class="form-label">Sélectionner une classe :</label>
+            <select id="classSelector" class="form-control mb-3">
+                <option value="">-- Choisir une classe --</option>
+                {% for class in classes %}
+                    <option value="{{ class.id }}">{{ class.name }}</option>
+                {% endfor %}
+            </select>
+            
+            <div id="studentsContainer" class="mt-4">
+                <h3>Liste des élèves</h3>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Nom</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTable">
+                            <tr><td colspan="3">Sélectionnez une classe pour voir les élèves</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Modal pour ajouter/modifier une note -->
+<div class="modal fade" id="gradeModal" tabindex="-1" aria-labelledby="gradeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="gradeModalLabel">Ajouter/Modifier une note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="gradeForm">
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Matière</label>
+                        <!-- Afficher la matière en lecture seule -->
+                        <input type="text" class="form-control" id="subject" value="{{ subject_name if subject_name else 'Aucune matière associée' }}" readonly>
+                    </div>
+                    
+                    
+                    <div class="mb-3">
+                        <label for="grade" class="form-label">Note</label>
+                        <input type="number" class="form-control" id="grade" name="grade" min="0" max="20" required>
+                    </div>
+                    <input type="hidden" id="studentId" name="studentId">
+                    <input type="hidden" id="gradeId" name="gradeId">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" class="btn btn-primary" id="saveGrade">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById("classSelector").addEventListener("change", function() {
+    let classId = this.value;
+    let tableBody = document.getElementById("studentsTable");
+    tableBody.innerHTML = "";
+
+    if (classId) {
+        fetch(`/teacher/get_students/${classId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='3'>Aucun élève trouvé</td></tr>";
+                } else {
+                    data.forEach(student => {
+                        let grades = student.grades.map(g => `${g.subject}: ${g.grade}`).join(", ") || "Pas de notes";
+                        let actions = `<button class="btn btn-sm btn-primary" onclick="openAddGradeModal(${student.id})">Ajouter une note</button>`;
+                        tableBody.innerHTML += `<tr><td>${student.name}</td><td>${grades}</td><td>${actions}</td></tr>`;
+                    });
+                }
+            });
+    }
+});
+
+function openAddGradeModal(studentId) {
+    document.getElementById("studentId").value = studentId;
+    document.getElementById("gradeId").value = "";
+    document.getElementById("gradeForm").reset();
+
+    // Pré-remplir la matière
+    let subjectName = "Nom de la matière";  // Remplacer par le nom réel de la matière
+    document.getElementById("subject").value = subjectName;
+
+    let modal = new bootstrap.Modal(document.getElementById('gradeModal'));
+    modal.show();
+}
+
+
+function openEditGradeModal(gradeId, subjectId, grade) {
+    document.getElementById("gradeId").value = gradeId;
+    document.getElementById("subject").value = subjectId;
+    document.getElementById("grade").value = grade;
+    let modal = new bootstrap.Modal(document.getElementById('gradeModal'));
+    modal.show();
+}
+
+document.getElementById("saveGrade").addEventListener("click", function() {
+    let studentId = document.getElementById("studentId").value;
+    let gradeId = document.getElementById("gradeId").value;
+    let formData = new FormData(document.getElementById("gradeForm"));
+
+    let url = gradeId ? `/teacher/update_grade/${gradeId}` : `/teacher/add_grade/${studentId}`;
+    let method = gradeId ? "POST" : "POST";
+
+    fetch(url, {
+        method: method,
+        body: JSON.stringify(Object.fromEntries(formData)),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Recharger la page pour voir les modifications
+        } else {
+            alert("Erreur: " + JSON.stringify(data.errors));
+        }
+    });
+});
+
+function deleteGrade(gradeId) {
+    if (confirm("Êtes-vous sûr de vouloir supprimer cette note ?")) {
+        fetch(`/teacher/delete_grade/${gradeId}`, {
+            method: "DELETE"
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload(); // Recharger la page pour voir les modifications
+            } else {
+                alert("Erreur lors de la suppression de la note.");
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from app.models import User, Class, Subject, db
+from app.models import User, Class, Subject, db, Teacher, Student
 from werkzeug.security import generate_password_hash
 from app.forms import AddClassForm, AddSubjectForm, AddUserForm
 
@@ -13,10 +13,10 @@ def dashboard():
     if current_user.role != "admin":
         flash("Accès refusé.", "danger")
         return redirect(url_for("main.index"))
-    
+
     form = AddUserForm()
 
-    if form.validate_on_submit():  
+    if form.validate_on_submit():
         new_user = User(
             first_name=form.first_name.data,
             last_name=form.last_name.data,
@@ -30,40 +30,52 @@ def dashboard():
         return redirect(url_for("admin.dashboard"))
 
     users = User.query.all()
-    return render_template("admin/dashboard.html", form=form, users=users)
+    classes = Class.query.all()  # 🔹 Ajout des classes
+    subjects = Subject.query.all()  # 🔹 Ajout des matières
+
+    return render_template("admin/dashboard.html", form=form, users=users, classes=classes, subjects=subjects)
 
 
-@admin_bp.route("/add_user", methods=["POST"])
-@login_required
+@admin_bp.route('/admin/add_user', methods=['POST'])
 def add_user():
-    if current_user.role != "admin":
-        return jsonify({"success": False, "error": "Accès refusé."}), 403
-    
     data = request.get_json()
-    first_name = data.get("first_name")
-    last_name = data.get("last_name")
-    email = data.get("email")
-    password = data.get("password")
-    role = data.get("role")
     
-    if not first_name or not last_name or not email or not password or not role:
-        return jsonify({"success": False, "error": "Tous les champs sont obligatoires."}), 400
+    first_name = data.get('first_name')
+    last_name = data.get('last_name')
+    email = data.get('email')
+    password = data.get('password')
+    role = data.get('role')
+    class_id = data.get('class')  # Récupération de la classe sélectionnée
+    subject_id = data.get('subject')
 
-    existing_user = User.query.filter_by(email=email).first()
-    if existing_user:
-        return jsonify({"success": False, "error": "Un utilisateur avec cet email existe déjà."}), 400
-    
-    new_user = User(
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        password=generate_password_hash(password, method='pbkdf2:sha256'),
-        role=role
-    )
+    if not (first_name and last_name and email and password and role):
+        return jsonify({'success': False, 'error': 'Tous les champs sont obligatoires.'}), 400
+
+    hashed_password = generate_password_hash(password)
+
+    # Création de l'utilisateur
+    new_user = User(first_name=first_name, last_name=last_name, email=email, password=hashed_password, role=role)
     db.session.add(new_user)
+    db.session.flush()  # Permet d'obtenir l'ID avant commit
+
+    if role == "student":
+        new_student = Student(user_id=new_user.id, class_id=class_id)
+        db.session.add(new_student)
+
+    elif role == "teacher":
+        new_teacher = Teacher(user_id=new_user.id, subject_id=subject_id)
+        db.session.add(new_teacher)
+
     db.session.commit()
-    
-    return jsonify({"success": True, "id": new_user.id, "first_name": new_user.first_name, "last_name": new_user.last_name, "email": new_user.email, "role": new_user.role})
+
+    return jsonify({
+        'success': True,
+        'id': new_user.id,
+        'first_name': new_user.first_name,
+        'last_name': new_user.last_name,
+        'email': new_user.email,
+        'role': new_user.role
+    })
 
 @admin_bp.route('/admin/delete_user/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
