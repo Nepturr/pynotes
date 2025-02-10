@@ -7,7 +7,7 @@
     <packaging>jar</packaging>
     <properties>
         <sonar.projectKey>NewToken</sonar.projectKey>
-        <sonar.host.url>http://10.2.111.36:9000/</sonar.host.url>
+        <sonar.host.url>http://host.docker.internal:9000/</sonar.host.url>
 	<sonar.login>sqa_4c01c9d6b07fee099f3d7b499f006a9faa7f69cc</sonar.login>
     </properties>
 </project>
