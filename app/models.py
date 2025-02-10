@@ -3,13 +3,14 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db 
 
-
 def create_admin():
     with db.session.begin(): 
-        if not User.query.filter_by(email="admin@example.com").first():
+        admin_exists = User.query.filter_by(role="admin").first()
+
+        if not admin_exists:
             admin = User(
-                first_name="Admin",
-                last_name="User",
+                first_name="admin",
+                last_name="admin",
                 email="admin@example.com",
                 password=generate_password_hash("admin", method='pbkdf2:sha256'),
                 role="admin"
@@ -17,7 +18,8 @@ def create_admin():
             db.session.add(admin)
             print("[INFO] Compte administrateur créé avec succès !")
         else:
-            print("[INFO] Compte administrateur déjà existant.")
+            print("[INFO] Un administrateur existe déjà.")
+
 
 
 class User(db.Model, UserMixin):

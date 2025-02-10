@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user
 from app.models import User, Class, Subject, db, Teacher, Student
 from werkzeug.security import generate_password_hash
-from app.forms import AddClassForm, AddSubjectForm, AddUserForm
+from app.forms import AddClassForm, AddSubjectForm, AddUserForm, ProfileForm
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -18,6 +18,7 @@ def dashboard():
 
     if form.validate_on_submit():
         new_user = User(
+            
             first_name=form.first_name.data,
             last_name=form.last_name.data,
             email=form.email.data,
@@ -77,19 +78,34 @@ def add_user():
         'role': new_user.role
     })
 
-@admin_bp.route('/admin/delete_user/<int:user_id>', methods=['POST'])
+@admin_bp.route("/delete_user/<int:user_id>", methods=["POST"])
+@login_required
 def delete_user(user_id):
+    if current_user.role != "admin":
+        return jsonify({"success": False, "error": "Accès refusé."}), 403
+
     user = User.query.get(user_id)
-    if not user:
-        return jsonify({'success': False, 'error': 'Utilisateur non trouvé'}), 404
+    print(user_id)
+
+    if user is None:
+        return jsonify({"success": False, "error": "Utilisateur non trouvé."}), 404
 
     try:
+        if user.role == "student":
+            student = Student.query.filter_by(user_id=user_id).first()
+            db.session.delete(student)
+        elif user.role == "teacher":
+            teacher = Teacher.query.filter_by(user_id=user_id).first()
+            db.session.delete(teacher)
+
         db.session.delete(user)
         db.session.commit()
-        return jsonify({'success': True})
+        return jsonify({"success": True}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 
 
 @admin_bp.route("/createclass", methods=["GET", "POST"])
@@ -205,3 +221,23 @@ def delete_subject(subject_id):
     db.session.commit()
 
     return jsonify({"success": True})
+
+
+@admin_bp.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    form = ProfileForm()
+    if form.validate_on_submit():
+        # Mettre à jour les informations
+        current_user.first_name = form.first_name.data
+        current_user.last_name = form.last_name.data
+        current_user.email = form.email.data
+        if form.password.data:
+            current_user.set_password(form.password.data)
+
+        db.session.commit()
+        flash("Profil mis à jour avec succès !", "success")
+        return redirect(url_for("admin.profile"))
+
+    return render_template("admin/profile.html", form=form)
+

@@ -1,5 +1,5 @@
 # teacher.py
-
+from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, jsonify, request
 from flask_login import login_required, current_user
 from app.models import User, Grade, Class, db, Student, Subject, Teacher
@@ -13,38 +13,132 @@ def dashboard():
     users = User.query.all()
     return render_template("teacher/dashboard.html", users=users)
 
-
 @teacher_bp.route("/manage_notes")
 @login_required
 def manage_notes():
     if current_user.role != "teacher":
         return jsonify({"error": "Accès non autorisé"}), 403
 
+    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+    if not teacher:
+        flash("Vous n'êtes pas assigné comme professeur.", "danger")
+        return redirect(url_for("teacher.dashboard"))
+
     classes = Class.query.all()
-    return render_template("teacher/managenotes.html", classes=classes)
+    return render_template("teacher/managenotes.html", classes=classes, teacher=teacher)
+
+@teacher_bp.route("/teacher/add_notes", methods=["POST"])
+@login_required
+def add_notes():
+    if current_user.role != "teacher":
+        return jsonify({"error": "Accès non autorisé"}), 403
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Requête invalide, aucun JSON reçu"}), 400
+
+        student_id = data.get("student_id")
+        grade_value = data.get("grade")
+        subject_id = data.get("subject_id")
+
+        if not student_id or not grade_value or not subject_id:
+            return jsonify({"error": "Données manquantes"}), 400
+
+        teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+        if not teacher or not teacher.subject:
+            return jsonify({"error": "Aucune matière associée"}), 404
+    
+        student = Student.query.get(student_id)
+        if not student:
+
+            return jsonify({"error": "Élève non trouvé"}), 404
+
+        new_grade = Grade(
+            student_id=student_id, subject_id=subject_id, teacher_id=teacher.id,
+            grade=grade_value, date_added=datetime.utcnow()
+        )
+        db.session.add(new_grade)
+        db.session.commit()
+        
+        return jsonify({"success": True, "grade": float(new_grade.grade), "student_id": student_id})
+
+    except Exception as e:
+        return jsonify({"error": f"Erreur serveur: {str(e)}"}), 500
+
+
+@teacher_bp.route("/delete_grade", methods=["POST"])
+@login_required
+def delete_grade():
+    if current_user.role != "teacher":
+        return jsonify({"error": "Accès non autorisé"}), 403
+    
+    data = request.get_json()
+    grade_id = data.get("grade_id")
+    
+    grade = Grade.query.get_or_404(grade_id)
+    db.session.delete(grade)
+    db.session.commit()
+    
+    return jsonify({"success": True})
+
+
+
+
+@teacher_bp.route('/get_student_grades/<int:student_id>', methods=['GET'])
+@login_required
+def get_student_grades(student_id):
+    if current_user.role != "teacher":
+        return jsonify({"error": "Accès non autorisé"}), 403
+
+    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+    if not teacher:
+        return jsonify({"error": "Professeur non trouvé"}), 404
+
+    grades = Grade.query.filter_by(student_id=student_id, teacher_id=teacher.id).all()
+
+    grade_data = [{
+        "id": grade.id,
+        "grade": float(grade.grade)
+    } for grade in grades]
+
+    return jsonify({"grades": grade_data})
+
+
+
+
 
 @teacher_bp.route("/get_students/<int:class_id>")
 @login_required
 def get_students(class_id):
     if current_user.role != "teacher":
         return jsonify({"error": "Accès non autorisé"}), 403
-    
+
+    teacher = Teacher.query.filter_by(user_id=current_user.id).first()
+    if not teacher:
+        return jsonify({"error": "Professeur non trouvé"}), 404
+
+    subject = teacher.subject 
+    if not subject:
+        return jsonify({"error": "Aucune matière associée"}), 404
+
     students = Student.query.filter_by(class_id=class_id).all()
     student_data = []
-    
+
     for student in students:
-        grades = Grade.query.filter_by(student_id=student.id).all()
+        grades = Grade.query.filter_by(student_id=student.id, subject_id=subject.id).all()
         student_data.append({
             "id": student.id,
             "name": f"{student.user.first_name} {student.user.last_name}",
             "grades": [{
-                "subject": grade.subject.name,
+                "id": grade.id,
                 "grade": float(grade.grade)
             } for grade in grades]
         })
-    
+
     return jsonify(student_data)
 
+    
 
 @teacher_bp.route('/get_subjects', methods=['GET'])
 @login_required
@@ -56,42 +150,6 @@ def get_subjects():
     else:
         return jsonify({"success": False, "message": "Aucune matière associée à ce professeur"}), 404
 
-@teacher_bp.route("/add_grade/<int:student_id>", methods=["GET", "POST"])
-@login_required
-def add_grade(student_id):
-    if current_user.role != "teacher":
-        return jsonify({"error": "Accès non autorisé"}), 403
-
-    form = GradeForm()
-    
-    # Récupérer l'objet Teacher pour l'utilisateur actuel (current_user)
-    teacher = current_user.teacher  # On suppose que chaque utilisateur a une relation 1-1 avec Teacher
-    
-    # Vérifier si le professeur a une matière associée
-    if teacher.subject:
-        subject_name = teacher.subject.name
-        subject_id = teacher.subject.id  # L'ID de la matière pour la base de données
-        form.subject_id.data = subject_id  # Pré-remplir le champ subject_id dans le formulaire
-    else:
-        # Si aucun sujet n'est associé à l'enseignant, afficher une erreur ou une notification
-        subject_name = None
-        subject_id = None
-
-    if form.validate_on_submit():
-        if subject_id:
-            new_grade = Grade(
-                student_id=student_id,
-                subject_id=subject_id,  # Utiliser le subject_id récupéré
-                teacher_id=teacher.id,  # Utiliser l'ID du professeur
-                grade=form.grade.data
-            )
-            db.session.add(new_grade)
-            db.session.commit()
-            return jsonify({"success": True, "grade": float(new_grade.grade), "subject": new_grade.subject.name})
-        else:
-            return jsonify({"error": "Ce professeur n'a pas de matière associée."}), 400
-    
-    return render_template('add_grade.html', form=form, subject_name=subject_name)
 
 
 
@@ -111,16 +169,7 @@ def update_grade(grade_id):
     
     return jsonify({"success": False, "errors": form.errors}), 400
 
-@teacher_bp.route("/delete_grade/<int:grade_id>", methods=["DELETE"])
-@login_required
-def delete_grade(grade_id):
-    if current_user.role != "teacher":
-        return jsonify({"error": "Accès non autorisé"}), 403
 
-    grade = Grade.query.get_or_404(grade_id)
-    db.session.delete(grade)
-    db.session.commit()
-    return jsonify({"success": True})
 
 @teacher_bp.route("/profile", methods=["GET", "POST"])
 @login_required

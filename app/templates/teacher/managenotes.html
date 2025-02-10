@@ -22,7 +22,7 @@
                         <thead class="bg-light">
                             <tr>
                                 <th>Nom</th>
-                                <th>Notes</th>
+                                <th>Note</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -36,44 +36,198 @@
     </div>
 </div>
 
-<!-- Modal pour ajouter/modifier une note -->
-<div class="modal fade" id="gradeModal" tabindex="-1" aria-labelledby="gradeModalLabel" aria-hidden="true">
+<!-- Modal d'ajout de note -->
+<div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="gradeModalLabel">Ajouter/Modifier une note</h5>
+                <h5 class="modal-title" id="addNoteModalLabel">Ajouter une note</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="gradeForm">
+                <form id="addNoteForm">
+                    <input type="hidden" id="addStudentId">
                     <div class="mb-3">
-                        <label for="subject" class="form-label">Matière</label>
-                        <!-- Afficher la matière en lecture seule -->
-                        <input type="text" class="form-control" id="subject" value="{{ subject_name if subject_name else 'Aucune matière associée' }}" readonly>
+                        <label class="form-label">Matière</label>
+                        <input type="hidden" id="addSubjectId" value="{{ teacher.subject.id }}">
+                        <input type="text" class="form-control" value="{{ teacher.subject.name }}" disabled>                        
                     </div>
-                    
-                    
                     <div class="mb-3">
-                        <label for="grade" class="form-label">Note</label>
-                        <input type="number" class="form-control" id="grade" name="grade" min="0" max="20" required>
+                        <label for="addGradeValue" class="form-label">Note</label>
+                        <input type="number" id="addGradeValue" class="form-control" min="0" max="20">
                     </div>
-                    <input type="hidden" id="studentId" name="studentId">
-                    <input type="hidden" id="gradeId" name="gradeId">
+                    <button type="submit" class="btn btn-primary">Ajouter</button>
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-                <button type="button" class="btn btn-primary" id="saveGrade">Enregistrer</button>
             </div>
         </div>
     </div>
 </div>
 
+
+<!-- Modal supr de note -->
+
+<!-- Modal pour supprimer une note -->
+<div class="modal fade" id="removeNoteModal" tabindex="-1" aria-labelledby="removeNoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeNoteModalLabel">Supprimer une note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="delNoteForm">
+                    <input type="hidden" id="removeStudentId">
+                    <div class="mb-3">
+                        <label for="notesSelector" class="form-label">Sélectionner une note à supprimer :</label>
+                        <select id="notesSelector" class="form-control mb-3">
+                            <option value="">-- Choisir une note --</option>
+                        </select>                       
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" id="selectedGrade" class="form-control" disabled>
+                    </div>
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 <script>
+
+
+
+// Lorsque la classe est changée, on récupère les étudiants pour cette classe
 document.getElementById("classSelector").addEventListener("change", function() {
     let classId = this.value;
+    fetchStudents(classId);  // Mettre à jour les étudiants pour la classe sélectionnée
+});
+
+
+// Gestion du clic sur "Ajouter"
+document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("add-note-btn")) {
+        let studentId = e.target.getAttribute("data-student-id");
+        document.getElementById("addStudentId").value = studentId;
+        let addNoteModal = new bootstrap.Modal(document.getElementById("addNoteModal"));
+        addNoteModal.show();
+    }
+});
+
+// Gestion du clic sur "Supprimer"
+document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("delete-note-btn")) {
+        let studentId = e.target.getAttribute("data-student-id");
+        document.getElementById("addStudentId").value = studentId;
+        let removeNoteModal = new bootstrap.Modal(document.getElementById("removeNoteModal"));
+        removeNoteModal.show();
+    }
+});
+
+// Soumission AJAX de l'ajout de note
+document.getElementById("addNoteForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    let studentId = document.getElementById("addStudentId").value;
+    let subjectId = document.getElementById("addSubjectId").value;
+    let gradeValue = document.getElementById("addGradeValue").value;
+
+    // Récupérer le token CSRF
+    let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+
+    let data = { student_id: studentId, subject_id: subjectId, grade: gradeValue };
+
+    fetch(`{{ url_for('teacher.add_notes') }}`, {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify(data)
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Rafraîchir le tableau avec les données actuelles
+            let classId = document.getElementById("classSelector").value;  // Récupérer la classe sélectionnée
+            fetchStudents(classId);  // Mettre à jour les étudiants pour la classe
+        } else {
+            alert("Erreur lors de l'ajout de la note");
+        }
+    });
+});
+
+
+// Gestion du clic sur "Supprimer"
+// Gestion du clic sur "Supprimer"
+document.addEventListener("click", function(e) {
+    if (e.target.classList.contains("delete-note-btn")) {
+        let studentId = e.target.getAttribute("data-student-id");
+        document.getElementById("removeStudentId").value = studentId;
+        
+        // Charger les notes de l'élève
+        fetch(`/teacher/get_student_grades/${studentId}`)
+            .then(response => response.json())
+            .then(data => {
+                let notesSelector = document.getElementById("notesSelector");
+                notesSelector.innerHTML = '<option value="">-- Choisir une note --</option>'; // Clear previous options
+
+                data.grades.forEach(grade => {
+                    let option = document.createElement("option");
+                    option.value = grade.id;
+                    option.textContent = grade.grade;
+                    notesSelector.appendChild(option);
+                });
+
+                let removeNoteModal = new bootstrap.Modal(document.getElementById("removeNoteModal"));
+                removeNoteModal.show();
+            })
+            .catch(error => {
+                console.error("Erreur lors du chargement des notes : ", error);
+                alert("Impossible de charger les notes de l'élève.");
+            });
+    }
+});
+
+// Mise à jour de l'affichage de la note sélectionnée
+document.getElementById("notesSelector").addEventListener("change", function() {
+    let selectedGrade = this.options[this.selectedIndex].text;
+    document.getElementById("selectedGrade").value = selectedGrade;
+});
+
+document.getElementById("delNoteForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    let gradeId = document.getElementById("notesSelector").value;
+
+    // Récupérer le token CSRF
+    let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+
+    let data = { grade_id: gradeId };
+
+    fetch(`{{ url_for('teacher.delete_grade') }}`, {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify(data)
+    }).then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Rafraîchir le tableau avec les données actuelles
+            let classId = document.getElementById("classSelector").value;  // Récupérer la classe sélectionnée
+            fetchStudents(classId);  // Mettre à jour les étudiants pour la classe
+        } else {
+            alert("Erreur lors de la suppression de la note");
+        }
+    });
+});
+
+
+// Fonction pour récupérer les élèves d'une classe donnée
+function fetchStudents(classId) {
     let tableBody = document.getElementById("studentsTable");
-    tableBody.innerHTML = "";
+    tableBody.innerHTML = "";  // Vider le tableau avant de le remplir avec les nouvelles données
 
     if (classId) {
         fetch(`/teacher/get_students/${classId}`)
@@ -83,76 +237,40 @@ document.getElementById("classSelector").addEventListener("change", function() {
                     tableBody.innerHTML = "<tr><td colspan='3'>Aucun élève trouvé</td></tr>";
                 } else {
                     data.forEach(student => {
-                        let grades = student.grades.map(g => `${g.subject}: ${g.grade}`).join(", ") || "Pas de notes";
-                        let actions = `<button class="btn btn-sm btn-primary" onclick="openAddGradeModal(${student.id})">Ajouter une note</button>`;
-                        tableBody.innerHTML += `<tr><td>${student.name}</td><td>${grades}</td><td>${actions}</td></tr>`;
+                        let row = `<tr data-student-id="${student.id}">
+                                       <td>${student.name}</td>`;
+
+                        // Ajouter toutes les notes
+                        let gradesContent = "";
+                        student.grades.forEach(grade => {
+                            gradesContent += `<span class="badge text-dark m-1">${grade.grade}</span>`;
+                        });
+
+                        row += `<td>${gradesContent}</td>`;
+
+                        // Ajout des boutons (Ajouter & Supprimer)
+                        row += `
+                            <td>
+                                <button class="btn btn-success btn-sm add-note-btn" data-student-id="${student.id}">
+                                    Ajouter
+                                </button>
+                                <button class="btn btn-danger btn-sm delete-note-btn" data-student-id="${student.id}">
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>`;
+
+                        tableBody.innerHTML += row;
                     });
                 }
             });
     }
-});
-
-function openAddGradeModal(studentId) {
-    document.getElementById("studentId").value = studentId;
-    document.getElementById("gradeId").value = "";
-    document.getElementById("gradeForm").reset();
-
-    // Pré-remplir la matière
-    let subjectName = "Nom de la matière";  // Remplacer par le nom réel de la matière
-    document.getElementById("subject").value = subjectName;
-
-    let modal = new bootstrap.Modal(document.getElementById('gradeModal'));
-    modal.show();
 }
 
 
-function openEditGradeModal(gradeId, subjectId, grade) {
-    document.getElementById("gradeId").value = gradeId;
-    document.getElementById("subject").value = subjectId;
-    document.getElementById("grade").value = grade;
-    let modal = new bootstrap.Modal(document.getElementById('gradeModal'));
-    modal.show();
-}
 
-document.getElementById("saveGrade").addEventListener("click", function() {
-    let studentId = document.getElementById("studentId").value;
-    let gradeId = document.getElementById("gradeId").value;
-    let formData = new FormData(document.getElementById("gradeForm"));
 
-    let url = gradeId ? `/teacher/update_grade/${gradeId}` : `/teacher/add_grade/${studentId}`;
-    let method = gradeId ? "POST" : "POST";
 
-    fetch(url, {
-        method: method,
-        body: JSON.stringify(Object.fromEntries(formData)),
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload(); // Recharger la page pour voir les modifications
-        } else {
-            alert("Erreur: " + JSON.stringify(data.errors));
-        }
-    });
-});
 
-function deleteGrade(gradeId) {
-    if (confirm("Êtes-vous sûr de vouloir supprimer cette note ?")) {
-        fetch(`/teacher/delete_grade/${gradeId}`, {
-            method: "DELETE"
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload(); // Recharger la page pour voir les modifications
-            } else {
-                alert("Erreur lors de la suppression de la note.");
-            }
-        });
-    }
-}
 </script>
 {% endblock %}

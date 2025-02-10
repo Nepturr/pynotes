@@ -165,6 +165,36 @@ document.getElementById("userForm").addEventListener("submit", function(event) {
     });
 });
 
+function deleteUser(event, userId) {
+    event.preventDefault(); // Empêche l'action par défaut (par exemple, rechargement de la page)
+    
+    if (confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
+        // Envoi de la requête AJAX pour supprimer l'utilisateur
+        fetch(`/admin/delete_user/${userId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector('input[name="csrf_token"]').value
+            }
+        })
+        .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Supprimer la ligne du tableau si la suppression réussit
+            const userRow = document.getElementById(`user-${userId}`);
+            if (userRow) {
+                userRow.remove();
+            }
+            alert("Utilisateur supprimé avec succès !");
+        } else {
+            alert("Erreur: " + (data.error || "Une erreur est survenue."));
+        }
+    })
+
+    }
+}
+
+
 </script>
 
 {% endblock %}

@@ -1,17 +1,26 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, DecimalField
+from wtforms import StringField, PasswordField, SubmitField, DecimalField, HiddenField, SelectField
+from flask_wtf.recaptcha import RecaptchaField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
-from app.models import User, Class, db
+from app.models import Class, db
 
 
 class LoginForm(FlaskForm):
-    email = StringField("Nom d'utilisateur", validators=[DataRequired()])
-    password = PasswordField("Mot de passe", validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    recaptcha = RecaptchaField()  # Ajout du champ reCAPTCHA
     submit = SubmitField("Se connecter")
 
 
-from wtforms import StringField, PasswordField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Email, EqualTo
+
+
+class ProfileForm(FlaskForm):
+    first_name = StringField('Prénom', validators=[DataRequired()])
+    last_name = StringField('Nom', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired()])
+    password = PasswordField('Mot de passe')
+
+
 
 class RegistrationForm(FlaskForm):
     username = StringField("Nom d'utilisateur", validators=[DataRequired(), Length(min=3, max=100)])

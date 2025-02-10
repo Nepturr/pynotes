@@ -6,3 +6,5 @@ Flask-WTF
 python-dotenv
 gunicorn
 pymysql
+python-dotenv
+requests
