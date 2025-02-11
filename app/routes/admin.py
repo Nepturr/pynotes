@@ -25,6 +25,7 @@ def dashboard():
             password=generate_password_hash(form.password.data, method='pbkdf2:sha256'),
             role=form.role.data
         )
+        
         db.session.add(new_user)
         db.session.commit()
         flash("Utilisateur ajouté avec succès.", "success")
@@ -35,6 +36,39 @@ def dashboard():
     subjects = Subject.query.all()  # 🔹 Ajout des matières
 
     return render_template("admin/dashboard.html", form=form, users=users, classes=classes, subjects=subjects)
+
+
+@admin_bp.route("/edit_user/<int:user_id>", methods=["POST"])
+@login_required
+def edit_user(user_id):
+    if current_user.role != "admin":
+        return jsonify({"success": False, "error": "Accès refusé."}), 403
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "error": "Utilisateur introuvable."}), 404
+
+    data = request.get_json()
+    user.first_name = data.get("first_name")
+    user.last_name = data.get("last_name")
+    user.email = data.get("email")
+
+    if "password" in data and data["password"]:
+        user.password = generate_password_hash(data["password"])
+
+    if user.role == "student":
+        student = Student.query.filter_by(user_id=user.id).first()
+        student.class_id = data.get("class")
+
+    elif user.role == "teacher":
+        teacher = Teacher.query.filter_by(user_id=user.id).first()
+        teacher.subject_id = data.get("subject")
+
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+
 
 
 @admin_bp.route('/admin/add_user', methods=['POST'])

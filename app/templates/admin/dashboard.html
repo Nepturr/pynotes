@@ -7,7 +7,6 @@
         <main class="col-md-9 col-lg-10 px-4">
             <h2 class="mt-4">Gestion des utilisateurs</h2>
 
-            <!-- Bouton pour ouvrir le modal -->
             <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addUserModal">
                 <i class="fas fa-plus"></i> Ajouter un utilisateur
             </button>
@@ -33,7 +32,8 @@
                             <td>{{ user.email }}</td>
                             <td>{{ user.role }}</td>
                             <td>
-                                <button class="btn btn-danger btn-sm" onclick="deleteUser(event, {{ user.id }})">Supprimer</button>
+                                <button class="btn btn-warning btn-sm" onclick="openEditModal({{ user.id }}, '{{ user.first_name }}', '{{ user.last_name }}', '{{ user.email }}', '{{ user.role }}', '{{ user.student.class_.name if user.role == 'student' else '' }}', '{{ user.teacher.subject.name if user.role == 'teacher' else '' }}')">Modifier</button>                                
+                            <button class="btn btn-danger btn-sm" onclick="deleteUser(event, {{ user.id }})">Supprimer</button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -103,7 +103,128 @@
     </div>
 </div>
 
+
+<!-- Modal pour modifier un utilisateur -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUserModalLabel">Modifier un utilisateur</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editUserForm" method="POST" novalidate>
+                    {{ form.hidden_tag() }}
+                    <input type="hidden" id="editUserId">
+
+                    <div class="mb-3">
+                        <label for="editFirstName" class="form-label">Prénom</label>
+                        {{ form.first_name(class="form-control", id="editFirstName") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="editLastName" class="form-label">Nom</label>
+                        {{ form.last_name(class="form-control", id="editLastName") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email</label>
+                        {{ form.email(class="form-control", id="editEmail") }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="editPassword" class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+                        {{ form.password(class="form-control", id="editPassword") }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editRole" class="form-label">Rôle</label>
+                        {{ form.role(class="form-control", id="editRole", disabled=True) }}
+                        <input type="hidden" name="role" id="editRoleHidden">
+                    </div>
+
+                    <!-- Classe ou Matière (affichage dynamique) -->
+                    <div class="mb-3" id="editClassOrSubjectField" style="display: none;">
+                        <label id="editClassOrSubjectLabel" class="form-label"></label>
+                        <input type="text" class="form-control" id="editClassOrSubject" disabled>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
 <script>
+
+function openEditModal(id, firstName, lastName, email, role, className, subjectName) {
+    document.getElementById("editUserId").value = id;
+    document.getElementById("editFirstName").value = firstName;
+    document.getElementById("editLastName").value = lastName;
+    document.getElementById("editEmail").value = email;
+    document.getElementById("editRole").value = role;
+    document.getElementById("editRoleHidden").value = role; // Champ caché pour envoyer la valeur
+
+    let classOrSubjectField = document.getElementById("editClassOrSubjectField");
+    let classOrSubjectLabel = document.getElementById("editClassOrSubjectLabel");
+    let classOrSubjectInput = document.getElementById("editClassOrSubject");
+
+    if (role === "student" && className) {
+        classOrSubjectField.style.display = "block";
+        classOrSubjectLabel.innerText = "Classe";
+        classOrSubjectInput.value = className;
+    } else if (role === "teacher" && subjectName) {
+        classOrSubjectField.style.display = "block";
+        classOrSubjectLabel.innerText = "Matière";
+        classOrSubjectInput.value = subjectName;
+    } else {
+        classOrSubjectField.style.display = "none";
+    }
+
+    $('#editUserModal').modal('show');
+}
+
+document.getElementById("editUserForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    let userId = document.getElementById("editUserId").value;
+    let firstName = document.getElementById("editFirstName").value;
+    let lastName = document.getElementById("editLastName").value;
+    let email = document.getElementById("editEmail").value;
+    let password = document.getElementById("editPassword").value;
+    let role = document.getElementById("editRoleHidden").value;
+    let csrfToken = document.querySelector('input[name="csrf_token"]').value;
+
+    let data = { first_name: firstName, last_name: lastName, email: email, role: role };
+
+    if (password) {
+        data.password = password;
+    }
+
+    fetch(`/admin/edit_user/${userId}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert("Erreur: " + (data.error || "Une erreur est survenue."));
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        alert("Une erreur est survenue.");
+    });
+});
+
 document.getElementById("role").addEventListener("change", function() {
     let role = this.value;
     
