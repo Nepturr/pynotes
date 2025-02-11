@@ -8,3 +8,4 @@ gunicorn
 pymysql
 python-dotenv
 requests
+cryptography
