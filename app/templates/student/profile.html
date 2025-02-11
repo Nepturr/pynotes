@@ -19,6 +19,7 @@
                     </div>
 
                     <form method="POST" action="{{ url_for('student.profile') }}">
+                        {{ form.csrf_token }}
                         <div class="mt-4">
                             <div class="mb-3">
                                 <label for="first_name" class="form-label">Prénom</label>

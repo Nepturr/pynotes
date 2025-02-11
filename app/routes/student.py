@@ -1,7 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.models import User, Grade, db
-from flask_wtf.csrf import generate_csrf
 
 
 student_bp = Blueprint("student", __name__, url_prefix="/student")

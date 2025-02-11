@@ -32,8 +32,8 @@ def dashboard():
         return redirect(url_for("admin.dashboard"))
 
     users = User.query.all()
-    classes = Class.query.all()  # 🔹 Ajout des classes
-    subjects = Subject.query.all()  # 🔹 Ajout des matières
+    classes = Class.query.all()
+    subjects = Subject.query.all()
 
     return render_template("admin/dashboard.html", form=form, users=users, classes=classes, subjects=subjects)
 
@@ -80,18 +80,28 @@ def add_user():
     email = data.get('email')
     password = data.get('password')
     role = data.get('role')
-    class_id = data.get('class')  # Récupération de la classe sélectionnée
+    class_id = data.get('class') 
     subject_id = data.get('subject')
 
-    if not (first_name and last_name and email and password and role):
+    if not all([first_name, last_name, email, password, role]):
         return jsonify({'success': False, 'error': 'Tous les champs sont obligatoires.'}), 400
 
-    hashed_password = generate_password_hash(password)
+    if role == "student":
+        class_exists = db.session.query(Class).filter_by(id=class_id).first()
+        if not class_exists:
+            return jsonify({'success': False, 'error': 'La classe spécifiée n\'existe pas. Veuillez en créer une avant d\'ajouter un élève.'}), 400
 
-    # Création de l'utilisateur
+    if role == "teacher":
+        subject_exists = db.session.query(Subject).filter_by(id=subject_id).first()
+        if not subject_exists:
+            return jsonify({'success': False, 'error': 'La matière spécifiée n\'existe pas. Veuillez en créer une avant d\'ajouter un professeur.'}), 400
+
+
+    hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+
     new_user = User(first_name=first_name, last_name=last_name, email=email, password=hashed_password, role=role)
     db.session.add(new_user)
-    db.session.flush()  # Permet d'obtenir l'ID avant commit
+    db.session.flush() 
 
     if role == "student":
         new_student = Student(user_id=new_user.id, class_id=class_id)
@@ -161,7 +171,6 @@ def createclass():
     classes = Class.query.all()
     return render_template("admin/createclass.html", form=form, classes=classes)
 
-# ADD CLASS AJAX
 @admin_bp.route("/add_class", methods=["POST"])
 @login_required
 def add_class():
@@ -262,7 +271,6 @@ def delete_subject(subject_id):
 def profile():
     form = ProfileForm()
     if form.validate_on_submit():
-        # Mettre à jour les informations
         current_user.first_name = form.first_name.data
         current_user.last_name = form.last_name.data
         current_user.email = form.email.data

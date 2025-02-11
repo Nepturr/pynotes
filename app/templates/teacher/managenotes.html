@@ -42,7 +42,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addNoteModalLabel">Ajouter une note</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">X</button>
             </div>
             <div class="modal-body">
                 <form id="addNoteForm">
@@ -72,7 +72,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="removeNoteModalLabel">Supprimer une note</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn btn-secondary close-modal" data-bs-dismiss="modal">X</button>
             </div>
             <div class="modal-body">
                 <form id="delNoteForm">
@@ -99,14 +99,12 @@
 
 
 
-// Lorsque la classe est changée, on récupère les étudiants pour cette classe
 document.getElementById("classSelector").addEventListener("change", function() {
     let classId = this.value;
-    fetchStudents(classId);  // Mettre à jour les étudiants pour la classe sélectionnée
+    fetchStudents(classId);
 });
 
 
-// Gestion du clic sur "Ajouter"
 document.addEventListener("click", function(e) {
     if (e.target.classList.contains("add-note-btn")) {
         let studentId = e.target.getAttribute("data-student-id");
@@ -116,7 +114,6 @@ document.addEventListener("click", function(e) {
     }
 });
 
-// Gestion du clic sur "Supprimer"
 document.addEventListener("click", function(e) {
     if (e.target.classList.contains("delete-note-btn")) {
         let studentId = e.target.getAttribute("data-student-id");
@@ -126,14 +123,12 @@ document.addEventListener("click", function(e) {
     }
 });
 
-// Soumission AJAX de l'ajout de note
 document.getElementById("addNoteForm").addEventListener("submit", function(e) {
     e.preventDefault();
     let studentId = document.getElementById("addStudentId").value;
     let subjectId = document.getElementById("addSubjectId").value;
     let gradeValue = document.getElementById("addGradeValue").value;
 
-    // Récupérer le token CSRF
     let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
 
     let data = { student_id: studentId, subject_id: subjectId, grade: gradeValue };
@@ -148,9 +143,8 @@ document.getElementById("addNoteForm").addEventListener("submit", function(e) {
     }).then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Rafraîchir le tableau avec les données actuelles
-            let classId = document.getElementById("classSelector").value;  // Récupérer la classe sélectionnée
-            fetchStudents(classId);  // Mettre à jour les étudiants pour la classe
+            let classId = document.getElementById("classSelector").value; 
+            fetchStudents(classId); 
         } else {
             alert("Erreur lors de l'ajout de la note");
         }
@@ -158,19 +152,16 @@ document.getElementById("addNoteForm").addEventListener("submit", function(e) {
 });
 
 
-// Gestion du clic sur "Supprimer"
-// Gestion du clic sur "Supprimer"
 document.addEventListener("click", function(e) {
     if (e.target.classList.contains("delete-note-btn")) {
         let studentId = e.target.getAttribute("data-student-id");
         document.getElementById("removeStudentId").value = studentId;
         
-        // Charger les notes de l'élève
         fetch(`/teacher/get_student_grades/${studentId}`)
             .then(response => response.json())
             .then(data => {
                 let notesSelector = document.getElementById("notesSelector");
-                notesSelector.innerHTML = '<option value="">-- Choisir une note --</option>'; // Clear previous options
+                notesSelector.innerHTML = '<option value="">-- Choisir une note --</option>';
 
                 data.grades.forEach(grade => {
                     let option = document.createElement("option");
@@ -189,7 +180,6 @@ document.addEventListener("click", function(e) {
     }
 });
 
-// Mise à jour de l'affichage de la note sélectionnée
 document.getElementById("notesSelector").addEventListener("change", function() {
     let selectedGrade = this.options[this.selectedIndex].text;
     document.getElementById("selectedGrade").value = selectedGrade;
@@ -199,7 +189,6 @@ document.getElementById("delNoteForm").addEventListener("submit", function(e) {
     e.preventDefault();
     let gradeId = document.getElementById("notesSelector").value;
 
-    // Récupérer le token CSRF
     let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
 
     let data = { grade_id: gradeId };
@@ -214,9 +203,8 @@ document.getElementById("delNoteForm").addEventListener("submit", function(e) {
     }).then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Rafraîchir le tableau avec les données actuelles
-            let classId = document.getElementById("classSelector").value;  // Récupérer la classe sélectionnée
-            fetchStudents(classId);  // Mettre à jour les étudiants pour la classe
+            let classId = document.getElementById("classSelector").value; 
+            fetchStudents(classId); 
         } else {
             alert("Erreur lors de la suppression de la note");
         }
@@ -224,10 +212,9 @@ document.getElementById("delNoteForm").addEventListener("submit", function(e) {
 });
 
 
-// Fonction pour récupérer les élèves d'une classe donnée
 function fetchStudents(classId) {
     let tableBody = document.getElementById("studentsTable");
-    tableBody.innerHTML = "";  // Vider le tableau avant de le remplir avec les nouvelles données
+    tableBody.innerHTML = ""; 
 
     if (classId) {
         fetch(`/teacher/get_students/${classId}`)
@@ -240,7 +227,6 @@ function fetchStudents(classId) {
                         let row = `<tr data-student-id="${student.id}">
                                        <td>${student.name}</td>`;
 
-                        // Ajouter toutes les notes
                         let gradesContent = "";
                         student.grades.forEach(grade => {
                             gradesContent += `<span class="badge text-dark m-1">${grade.grade}</span>`;
@@ -248,7 +234,6 @@ function fetchStudents(classId) {
 
                         row += `<td>${gradesContent}</td>`;
 
-                        // Ajout des boutons (Ajouter & Supprimer)
                         row += `
                             <td>
                                 <button class="btn btn-success btn-sm add-note-btn" data-student-id="${student.id}">
@@ -266,6 +251,22 @@ function fetchStudents(classId) {
             });
     }
 }
+
+
+document.addEventListener("click", function (e) {
+    if (e.target.classList.contains("btn-close") || e.target.classList.contains("close-modal")) {
+        let modal = bootstrap.Modal.getInstance(document.getElementById("removeNoteModal"));
+        if (modal) {
+            modal.hide();
+        }
+        document.body.classList.remove("modal-open");
+        let backdrop = document.querySelector(".modal-backdrop");
+        if (backdrop) {
+            backdrop.remove();
+        }
+    }
+});
+
 
 
 

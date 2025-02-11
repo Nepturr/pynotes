@@ -165,7 +165,7 @@ function openEditModal(id, firstName, lastName, email, role, className, subjectN
     document.getElementById("editLastName").value = lastName;
     document.getElementById("editEmail").value = email;
     document.getElementById("editRole").value = role;
-    document.getElementById("editRoleHidden").value = role; // Champ caché pour envoyer la valeur
+    document.getElementById("editRoleHidden").value = role;
 
     let classOrSubjectField = document.getElementById("editClassOrSubjectField");
     let classOrSubjectLabel = document.getElementById("editClassOrSubjectLabel");
@@ -228,11 +228,9 @@ document.getElementById("editUserForm").addEventListener("submit", function(even
 document.getElementById("role").addEventListener("change", function() {
     let role = this.value;
     
-    // Cache les deux champs par défaut
     document.getElementById("classField").style.display = "none";
     document.getElementById("subjectField").style.display = "none";
     
-    // Affiche le champ approprié en fonction du rôle
     if (role === "student") {
         document.getElementById("classField").style.display = "block";
     } else if (role === "teacher") {
@@ -248,7 +246,7 @@ document.getElementById("userForm").addEventListener("submit", function(event) {
     let email = document.getElementById("email").value;
     let password = document.getElementById("password").value;
     let role = document.getElementById("role").value;
-    let classId = document.getElementById("class").value || null;  // Vérifie si une classe est sélectionnée
+    let classId = document.getElementById("class").value || null; 
     let subjectId = document.getElementById("subject").value || null;
     let csrfToken = document.querySelector('input[name="csrf_token"]').value;
 
@@ -273,7 +271,21 @@ document.getElementById("userForm").addEventListener("submit", function(event) {
         if (data.success) {
             let table = document.querySelector("tbody");
             let newRow = table.insertRow();
-            newRow.innerHTML = `<td>${data.id}</td><td>${data.first_name}</td><td>${data.last_name}</td><td>${data.email}</td><td>${data.role}</td><td><button class="btn btn-danger btn-sm" onclick="deleteUser(event, ${data.id})">Supprimer</button></td>`;
+            newRow.innerHTML = `
+            <td>${data.id}</td>
+            <td>${data.first_name}</td>
+            <td>${data.last_name}</td>
+            <td>${data.email}</td>
+            <td>${data.role}</td>
+            <td>
+                <button class="btn btn-warning btn-sm" onclick="openEditModal(${data.id}, '${data.first_name}', '${data.last_name}', '${data.email}', '${data.role}', '${data.class_name || ''}', '${data.subject_name || ''}')">
+                    Modifier
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="deleteUser(event, ${data.id})">
+                    Supprimer
+                </button>
+            </td>
+        `;
             $('#addUserModal').modal('hide');
             alert("Utilisateur ajouté avec succès !");
         } else {
@@ -287,10 +299,9 @@ document.getElementById("userForm").addEventListener("submit", function(event) {
 });
 
 function deleteUser(event, userId) {
-    event.preventDefault(); // Empêche l'action par défaut (par exemple, rechargement de la page)
+    event.preventDefault(); 
     
     if (confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
-        // Envoi de la requête AJAX pour supprimer l'utilisateur
         fetch(`/admin/delete_user/${userId}`, {
             method: "POST",
             headers: {
@@ -301,7 +312,6 @@ function deleteUser(event, userId) {
         .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Supprimer la ligne du tableau si la suppression réussit
             const userRow = document.getElementById(`user-${userId}`);
             if (userRow) {
                 userRow.remove();

@@ -1,4 +1,3 @@
-# teacher.py
 from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, flash, jsonify, request
 from flask_login import login_required, current_user
@@ -143,7 +142,6 @@ def get_students(class_id):
 @teacher_bp.route('/get_subjects', methods=['GET'])
 @login_required
 def get_subjects():
-    # Assurez-vous que le professeur a bien une matière assignée
     teacher = Teacher.query.filter_by(user_id=current_user.id).first()
     if teacher and teacher.subject:
         return jsonify([{"id": teacher.subject.id, "name": teacher.subject.name}])

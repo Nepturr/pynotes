@@ -18,7 +18,9 @@
                         <a href="mailto:{{ current_user.email }}">{{ current_user.email }}</a>
                     </div>
 
-                    <form method="POST" action="{{ url_for('student.profile') }}">
+                    <form method="POST" action="{{ url_for('teacher.profile') }}">
+                        {{ form.csrf_token }}
+
                         <div class="mt-4">
                             <div class="mb-3">
                                 <label for="first_name" class="form-label">Prénom</label>

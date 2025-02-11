@@ -1,14 +1,14 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, DecimalField, HiddenField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, DecimalField, SelectField
 from flask_wtf.recaptcha import RecaptchaField
-from wtforms.validators import DataRequired, Email, Length, EqualTo
+from wtforms.validators import DataRequired, Length
 from app.models import Class, db
 
 
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
-    recaptcha = RecaptchaField()  # Ajout du champ reCAPTCHA
+    recaptcha = RecaptchaField() 
     submit = SubmitField("Se connecter")
 
 
@@ -19,25 +19,6 @@ class ProfileForm(FlaskForm):
     last_name = StringField('Nom', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired()])
     password = PasswordField('Mot de passe')
-
-
-
-class RegistrationForm(FlaskForm):
-    username = StringField("Nom d'utilisateur", validators=[DataRequired(), Length(min=3, max=100)])
-    email = StringField("Email", validators=[DataRequired()])
-    password = PasswordField("Mot de passe", validators=[DataRequired(), Length(min=6)])
-    role = SelectField("Rôle", choices=[("student", "Élève"), ("teacher", "Professeur"),  ("admin", "Admin")], validators=[DataRequired()])
-    
-    class_choice = SelectField("Affecter une classe", choices=[], coerce=int) 
-    new_class = StringField("Créer une nouvelle classe") 
-    submitClass = SubmitField("Créer la Classe")
-    submit = SubmitField("Créer l'utilisateur")
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.class_choice.choices = [(0, "Aucune")] + [(c.id, c.name) for c in Class.query.all()]
-
-
 
 class ClassForm(FlaskForm):
     name = StringField("Nom de la classe", validators=[DataRequired()])

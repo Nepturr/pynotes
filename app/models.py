@@ -1,7 +1,18 @@
 from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import db 
+from app import db
+from config import Config
+from cryptography.fernet import Fernet
+
+SECRET_KEY = Config.ENCRYPTION_KEY.encode()
+cipher = Fernet(SECRET_KEY)
+
+def encrypt_data(data):
+    return cipher.encrypt(data.encode()).decode()
+
+def decrypt_data(data):
+    return cipher.decrypt(data.encode()).decode()
 
 def create_admin():
     with db.session.begin(): 
@@ -26,8 +37,8 @@ class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=False)
+    _first_name = db.Column("first_name", db.Text, nullable=False)
+    _last_name = db.Column("last_name", db.Text, nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.Text, nullable=False)
     role = db.Column(db.Enum('admin', 'teacher', 'student'), nullable=False)
@@ -41,8 +52,25 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password, password)
 
+    @property
+    def first_name(self):
+        return decrypt_data(self._first_name)
+
+    @first_name.setter
+    def first_name(self, value):
+        self._first_name = encrypt_data(value)
+
+    @property
+    def last_name(self):
+        return decrypt_data(self._last_name)
+
+    @last_name.setter
+    def last_name(self, value):
+        self._last_name = encrypt_data(value)
+
     def __repr__(self):
         return f"<User {self.first_name} {self.last_name} - Role {self.role}>"
+
 
 
 class Student(db.Model):
